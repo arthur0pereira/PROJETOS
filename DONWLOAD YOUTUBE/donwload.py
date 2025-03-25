@@ -1,49 +1,79 @@
 import yt_dlp
 import os
+import customtkinter as ctk
+from tkinter import filedialog, messagebox
 
+# Função para baixar o vídeo
 def baixar_video(url, qualidade):
-    """Função que baixa o vídeo do YouTube com a qualidade escolhida pelo usuário."""
-    
-    opcoes = {}
+    """Baixa o vídeo do YouTube com base na qualidade escolhida."""
+    opcoes = {
+        'outtmpl': os.path.join(os.getcwd(), '%(title)s.%(ext)s')
+    }
 
-    if qualidade == "1":
-        opcoes = {'format': 'bestvideo+bestaudio/best'}  # Melhor qualidade disponível
-    elif qualidade == "2":
-        opcoes = {'format': 'worstvideo+worstaudio/worst'}  # Qualidade mais baixa (economiza espaço)
-    elif qualidade == "3":
-        opcoes = {
-            'format': 'bestaudio',  # Baixa o melhor áudio disponível
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',  # Qualidade do MP3
-            }]
-        }
+    if qualidade == "Alta (Melhor Qualidade)":
+        opcoes['format'] = 'bestvideo+bestaudio/best'
+    elif qualidade == "Média (Qualidade Média)":
+        opcoes['format'] = 'worstvideo+worstaudio/worst'
+    elif qualidade == "Apenas Áudio (MP3)":
+        opcoes['format'] = 'bestaudio'
+        opcoes['postprocessors'] = [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }]
 
-    opcoes['outtmpl'] = os.path.join(os.getcwd(), '%(title)s.%(ext)s')  # Salvar na pasta atual
+    try:
+        with yt_dlp.YoutubeDL(opcoes) as ydl:
+            ydl.download([url])
+        messagebox.showinfo("Sucesso", "✅ Download concluído com sucesso!")
+    except Exception as e:
+        messagebox.showerror("Erro", f"❌ Ocorreu um erro: {str(e)}")
 
-    with yt_dlp.YoutubeDL(opcoes) as ydl:
-        ydl.download([url])
+# Função para escolher pasta de saída
+def escolher_pasta():
+    pasta = filedialog.askdirectory()
+    if pasta:
+        os.chdir(pasta)
+        messagebox.showinfo("Pasta Selecionada", f"Pasta de saída alterada para: {pasta}")
 
-if __name__ == "__main__":
-    while True:
-        print("\n=== YouTube Downloader ===")
-        link = input("Digite o link do vídeo (ou 'sair' para fechar): ").strip()
+# Função para iniciar o download
+def iniciar_download():
+    url = entrada_url.get().strip()
+    qualidade = qualidade_var.get()
 
-        if link.lower() == "sair":
-            print("Saindo do programa...")
-            break
+    if not url:
+        messagebox.showwarning("Aviso", "Por favor, insira o link do vídeo.")
+        return
 
-        print("\nEscolha a qualidade do download:")
-        print("1 - Melhor qualidade (vídeo e áudio)")
-        print("2 - Qualidade média (menor resolução)")
-        print("3 - Apenas áudio (MP3)")
+    if not qualidade:
+        messagebox.showwarning("Aviso", "Por favor, selecione a qualidade.")
+        return
 
-        escolha = input("Digite o número da opção desejada: ").strip()
+    baixar_video(url, qualidade)
 
-        if escolha in ["1", "2", "3"]:
-            print("\nBaixando... Aguarde!")
-            baixar_video(link, escolha)
-            print("✅ Download concluído!\n")
-        else:
-            print("❌ Opção inválida. Tente novamente.")
+# Configuração da interface gráfica
+app = ctk.CTk()
+app.title("YouTube Downloader")
+app.geometry("500x350")
+
+# Título e Entrada do URL
+ctk.CTkLabel(app, text="YouTube Downloader", font=("Arial", 20)).pack(pady=10)
+ctk.CTkLabel(app, text="Digite o link do vídeo:").pack(pady=5)
+entrada_url = ctk.CTkEntry(app, width=400)
+entrada_url.pack(pady=5)
+
+# Menu de Qualidade
+ctk.CTkLabel(app, text="Escolha a qualidade do vídeo:").pack(pady=5)
+qualidade_var = ctk.StringVar(value="Alta (Melhor Qualidade)")
+qualidade_menu = ctk.CTkOptionMenu(app, variable=qualidade_var, values=[
+    "Alta (Melhor Qualidade)", 
+    "Média (Qualidade Média)", 
+    "Apenas Áudio (MP3)"
+])
+qualidade_menu.pack(pady=5)
+
+# Botões de Ações
+ctk.CTkButton(app, text="Escolher Pasta de Saída", command=escolher_pasta).pack(pady=5)
+ctk.CTkButton(app, text="Iniciar Download", command=iniciar_download).pack(pady=10)
+
+app.mainloop()
