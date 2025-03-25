@@ -4,14 +4,67 @@ import customtkinter as ctk
 from tkinter import filedialog, messagebox
 import subprocess
 import sys
+import shutil
+import platform
+import urllib.request
+import zipfile
 
-# Função para verificar e instalar dependências automaticamente
+# Função para instalar dependências automaticamente
 def instalar_dependencias():
     try:
         subprocess.check_call([sys.executable, "-m", "pip", "install", "yt-dlp"])
         subprocess.check_call([sys.executable, "-m", "pip", "install", "customtkinter"])
     except Exception as e:
         messagebox.showerror("Erro", f"❌ Não foi possível instalar as dependências: {str(e)}")
+
+# Função para instalar o FFmpeg automaticamente
+def instalar_ffmpeg():
+    """Baixa e instala o FFmpeg automaticamente se não estiver disponível."""
+    if shutil.which("ffmpeg") is not None:
+        print("✅ FFmpeg já está instalado.")
+        return
+
+    system = platform.system()
+    ffmpeg_url = ""
+
+    # Determina a URL de download com base no sistema operacional
+    if system == "Windows":
+        ffmpeg_url = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
+    elif system == "Linux":
+        messagebox.showinfo("Instalação Manual Necessária", "Por favor, instale o FFmpeg usando o gerenciador de pacotes do Linux.")
+        return
+    elif system == "Darwin":  # macOS
+        messagebox.showinfo("Instalação Manual Necessária", "Por favor, instale o FFmpeg usando Homebrew no macOS.")
+        return
+    else:
+        messagebox.showerror("Erro", "Sistema operacional não suportado para instalação automática do FFmpeg.")
+        return
+
+    try:
+        # Baixa o FFmpeg
+        print("⬇️ Baixando o FFmpeg...")
+        ffmpeg_zip = "ffmpeg.zip"
+        urllib.request.urlretrieve(ffmpeg_url, ffmpeg_zip)
+
+        # Extrai o FFmpeg
+        print("📦 Extraindo o FFmpeg...")
+        with zipfile.ZipFile(ffmpeg_zip, "r") as zip_ref:
+            zip_ref.extractall("ffmpeg_temp")
+
+        # Move os arquivos do FFmpeg para a pasta local
+        ffmpeg_folder = "ffmpeg_temp/ffmpeg-2023-essentials_build/bin"
+        if os.path.exists(ffmpeg_folder):
+            shutil.move(ffmpeg_folder, os.getcwd())
+            print("✅ FFmpeg instalado com sucesso!")
+            messagebox.showinfo("Sucesso", "FFmpeg instalado com sucesso!")
+        else:
+            messagebox.showerror("Erro", "Erro ao localizar os arquivos extraídos do FFmpeg.")
+
+        # Limpa os arquivos temporários
+        os.remove(ffmpeg_zip)
+        shutil.rmtree("ffmpeg_temp")
+    except Exception as e:
+        messagebox.showerror("Erro", f"Erro ao instalar o FFmpeg: {e}")
 
 # Função para exibir a barra de progresso
 def atualizar_progresso(dado):
@@ -112,7 +165,8 @@ barra_progresso = ctk.CTkProgressBar(app, variable=pbar, width=400)
 # Botões de Ações
 ctk.CTkButton(app, text="Escolher Pasta de Saída", command=escolher_pasta).pack(pady=5)
 ctk.CTkButton(app, text="Iniciar Download", command=iniciar_download).pack(pady=10)
-ctk.CTkButton(app, text="Instalar Dependências", command=instalar_dependencias).pack(pady=10)
+ctk.CTkButton(app, text="Instalar Dependências", command=instalar_dependencias).pack(pady=5)
+ctk.CTkButton(app, text="Instalar FFmpeg", command=instalar_ffmpeg).pack(pady=10)
 
 # Rodar a aplicação
 app.mainloop()
