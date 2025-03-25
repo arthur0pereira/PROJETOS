@@ -8,10 +8,12 @@ import shutil
 import platform
 import urllib.request
 import zipfile
+import subprocess
 
 # Função para instalar dependências automaticamente
 def instalar_dependencias():
     try:
+       
         subprocess.check_call([sys.executable, "-m", "pip", "install", "yt-dlp"])
         subprocess.check_call([sys.executable, "-m", "pip", "install", "customtkinter"])
     except Exception as e:
@@ -21,6 +23,10 @@ def instalar_dependencias():
 def instalar_ffmpeg():
     """Detecta e instala o FFmpeg automaticamente no sistema."""
     if shutil.which("ffmpeg") is not None:
+         # Comando para rodar o FFmpeg (exemplo de conversão de vídeo)
+        command = ['ffmpeg', '-i', 'entrada.mp4', 'saida.mp4']
+        # Executando o comando em segundo plano
+        subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         print("✅ FFmpeg já está instalado.")
         return
 
